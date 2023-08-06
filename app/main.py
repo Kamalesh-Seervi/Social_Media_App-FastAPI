@@ -1,12 +1,19 @@
 from typing import Union
-from fastapi import FastAPI , Response, status, HTTPException
+from fastapi import FastAPI , Response, status, HTTPException,Depends
 from fastapi.params import Body
 from pydantic import BaseModel
 from random import randrange
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
+from sqlalchemy.orm import Session
+from .database import engine,get_db
+#import engine from database.py
+from . import models
+#import models.py
 
+
+models.base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
@@ -38,6 +45,10 @@ while True:
 def read_root():
     return {"message": "hello folks"}
 
+@app.get("ormtest")
+def betatest( db: Session = Depends(get_db)):
+    return{"Status":"success"}
+
 
 @app.get("/posts")
 def get_posts():
@@ -60,7 +71,7 @@ def createpost(Post: Post):
 
 @app.get("/posts/{id}")
 def get_post(id:int):
-    cursor.execute("""SELECT * from posts WHERE id=%s""",(str(id)))
+    cursor.execute("""SELECT * from posts WHERE id=%s""",(str(id),))
     post=cursor.fetchone()
     if not post :
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id:{id} was not found")
@@ -68,7 +79,7 @@ def get_post(id:int):
 
 @app.delete("/posts/{id}")
 def del_post(id:int):
-    cursor.execute("""DELETE from posts WHERE id=%s RETURNING *""",(str(id)))
+    cursor.execute("""DELETE from posts WHERE id=%s RETURNING *""",(str(id),))
     delete=cursor.fetchone()
     conn.commit()
     if not delete:
