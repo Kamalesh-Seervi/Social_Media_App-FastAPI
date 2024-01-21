@@ -4,7 +4,7 @@ from psycopg2.extras import RealDictCursor
 import time
 from database import engine
 import models
-from routers import post,user
+from routers import post,user,auth
 
 models.base.metadata.create_all(bind=engine)
 
@@ -26,8 +26,9 @@ while True:
 
 app.include_router(post.router)
 app.include_router(user.router)
+app.include_router(auth.router)
 
-@app.get("/")  # path
+@app.get("/") 
 def read_root():
     return {"message": "hello folks"}
 

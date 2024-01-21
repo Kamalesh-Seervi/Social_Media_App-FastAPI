@@ -26,4 +26,14 @@ class UserProfileFromServer(BaseModel):
     email:EmailStr
     class Config:
         orm_mode = True
+
+class UserLogin(BaseModel):
+    email:EmailStr
+    password:str
     
+class Token(BaseModel):
+    Access_Token: str
+    Token_Type: str
+    
+class TokenData(BaseModel):
+    email_address: EmailStr

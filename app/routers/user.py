@@ -21,13 +21,16 @@ def create_user(user:schemas.UserCreate,db:Session=Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
     return {"message":"Your account has been Created"}
 
 
 @router.get("/{id}",response_model=schemas.UserProfileFromServer)
 def get_user(id:int,db:Session=Depends(get_db)):
+    
     getUser=db.query(models.User).filter(models.User.id==id).first()
     if not getUser :
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id:{id} was not found")
+    
     return getUser
 
