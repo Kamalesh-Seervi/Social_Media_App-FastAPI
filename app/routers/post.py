@@ -25,7 +25,7 @@ def get_posts(db:Session=Depends(get_db)):
 @router.post("/",status_code=status.HTTP_201_CREATED, response_model=schemas.PostFromServer)
 def create_post(post: schemas.PostCreate,db:Session=Depends(get_db),current_user:str = Depends(get_current_user)):
     
-    new_post=models.Post(**post.dict())
+    new_post=models.Post(owner_id=current_user.id, **post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -46,11 +46,15 @@ def get_post(id:int,db:Session=Depends(get_db)):
 @router.delete("/{id}")
 def del_post(id:int,db:Session=Depends(get_db),current_user:str = Depends(get_current_user)):
     
-    delete=db.query(models.Post).filter(models.Post.id==id)
+    delete_query=db.query(models.Post).filter(models.Post.id==id)
 
-    if delete.first()==None:
+    delete=delete_query.first()
+    if delete==None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id:{id} was not found")
-    delete.delete(synchronize_session=False)
+    
+    if delete.owner_id != get_current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorised to preform requested action")
+    delete_query.delete(synchronize_session=False)
     db.commit()
     
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -62,6 +66,9 @@ def update_post(id:int,Posts:schemas.PostCreate,db:Session=Depends(get_db),curre
     update=db.query(models.Post).filter(models.Post.id ==id).first()
     if update==None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id:{id} was not found")
+    
+    if update.owner_id != get_current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not Authorised to preform requested action")
      # Update individual attributes of the update object
     for key, value in Posts.dict(exclude_unset=True).items():
         setattr(update, key, value)
